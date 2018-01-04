@@ -1,0 +1,45 @@
+{
+    "scripts": [
+        {
+            "path": "01-createdatabase.usql",
+            "account": "",
+            "database": "master",
+            "schema": "dbo",
+            "optionalSettings": {
+                "runtimeVersion": "",
+                "priority": "",
+                "degreeOfParallelism": "",
+                "jobInformationOutputPath": ""
+            },
+            "codeBehindFiles": []
+        },
+        {
+            "path": "02-createassemblies.usql",
+            "account": "",
+            "database": "master",
+            "schema": "dbo",
+            "optionalSettings": {
+                "runtimeVersion": "",
+                "priority": "",
+                "degreeOfParallelism": "",
+                "jobInformationOutputPath": ""
+            },
+            "codeBehindFiles": []
+        },
+        {
+            "path": "03-extractcsv.usql",
+            "account": "",
+            "database": "",
+            "schema": "",
+            "optionalSettings": {
+                "runtimeVersion": "",
+                "priority": "",
+                "degreeOfParallelism": "",
+                "jobInformationOutputPath": ""
+            },
+            "codeBehindFiles": [
+                "./03-extractcsv.usql.cs"
+            ]
+        }
+    ]
+}

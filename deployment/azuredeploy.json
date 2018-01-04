@@ -1,0 +1,308 @@
+{
+  "contentVersion": "1.0.0.0",
+  "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "parameters": {
+    "dataFactoryLocation": {
+      "type": "string",
+      "allowedValues": [
+        "East US",
+        "East US 2",
+        "West Europe"
+      ],
+      "defaultValue": "East US",
+      "metadata": {
+        "description": "Location of the data factory. Currently, only East US, East US 2 and West Europe are supported. "
+      }
+    },
+    "servicePrincipalId": {
+      "type": "string",
+      "metadata": {
+        "description": "Enter here the Azure Application ID to be used to access the Data Lake Store"
+      }
+    },
+    "servicePrincipalKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Enter here the Application Key to be used to access the Data Lake Store"
+      }
+    },
+    "sourceDataLakeName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the data lake resource."
+      }
+    },
+    "sourceDataLakeContainer": {
+      "type": "string",
+      "defaultValue": "meetup",
+      "metadata": {
+        "description": "Name of the data lake container."
+      }
+    },
+    "sourceDataLakeFileName": {
+      "type": "string",
+      "defaultValue": "all-valid-meetups.csv",
+      "metadata": {
+        "description": "Name of the blob in the data lake container that has the data to be copied to Azure SQL Database table"
+      }
+    },
+    "sqlServerName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Azure SQL Server that will hold the output/copied data."
+      }
+    },
+    "databaseName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the Azure SQL Database in the Azure SQL server."
+      }
+    },
+    "sqlServerUserName": {
+      "type": "string",
+      "metadata": {
+        "description": "Name of the user that has access to the Azure SQL server."
+      }
+    },
+    "sqlServerPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Password for the user."
+      }
+    },
+    "sqlServerStoredProcedure": {
+      "type": "string",
+      "defaultValue": "spOverwriteMeetups",
+      "metadata": {
+        "description": "The name of the stored procedure used to add items to Sql Server database"
+      }
+    },
+    "sqlServerStoredProcedureType": {
+      "type": "string",
+      "defaultValue": "MeetupType",
+      "metadata": {
+        "description": "The name of the type used in the stored procedure"
+      }
+    },
+    "targetSQLTable": {
+      "type": "string",
+      "defaultValue": "Meetup",
+      "metadata": {
+        "description": "The name of the parameter in the Stored Procedure where the data will be send. When not using stored procedures it should contain the name of the destination table."
+      }
+    },
+    "targetSQLTableColumns": {
+      "type": "array",
+      "defaultValue": [
+        {
+          "name": "ID",
+          "type": "String"
+        },
+        {
+          "name": "Visibility",
+          "type": "String"
+        },
+        {
+          "name": "Date",
+          "type": "Datetime"
+        },
+        {
+          "name": "Name",
+          "type": "String"
+        },
+        {
+          "name": "Longitude",
+          "type": "Double"
+        },
+        {
+          "name": "Latitude",
+          "type": "Double"
+        },
+        {
+          "name": "Country",
+          "type": "String"
+        },
+        {
+          "name": "City",
+          "type": "String"
+        },
+        {
+          "name": "Group",
+          "type": "String"
+        },
+        {
+          "name": "GroupCategory",
+          "type": "String"
+        },
+        {
+          "name": "Status",
+          "type": "String"
+        }
+      ],
+      "metadata": {
+        "description": "Column definition for the target database"
+      }
+    }
+  },
+  "variables": {
+    "dataFactoryName": "[concat('DataLakeToSQLDF', uniqueString(resourceGroup().id))]",
+    "azureSqlLinkedServiceName": "AzureSqlLinkedService",
+    "azureDataLakeLinkedServiceName": "AzureDataLakeLinkedService",
+    "dataLakeInputDatasetName": "DataLakeInputDataset",
+    "sqlOutputDatasetName": "SQLOutputDataset",
+    "pipelineName": "DataLakeToSQLPipeline"
+  },
+  "resources": [
+    {
+      "name": "[variables('dataFactoryName')]",
+      "apiVersion": "2017-09-01-preview",
+      "type": "Microsoft.DataFactory/factories",
+      "location": "[parameters('dataFactoryLocation')]",
+      "resources": [
+        {
+          "type": "linkedservices",
+          "name": "[variables('azureDataLakeLinkedServiceName')]",
+          "dependsOn": [
+            "[variables('dataFactoryName')]"
+          ],
+          "apiVersion": "2017-09-01-preview",
+          "properties": {
+            "type": "AzureDataLakeStore",
+            "description": "Azure Data Lake linked service",
+            "typeProperties": {
+              "dataLakeStoreUri": "[concat('adl://',parameters('sourceDataLakeName'),'.azuredatalakestore.net/')]",
+              "servicePrincipalId": "[parameters('servicePrincipalId')]",
+              "servicePrincipalKey": "[parameters('servicePrincipalKey')]",
+              "tenant": "[subscription().tenantId]",
+              "subscriptionId": "[subscription().id]",
+              "resourceGroupName": "[resourceGroup().name]"
+            }
+          }
+        },
+        {
+          "type": "linkedservices",
+          "name": "[variables('azureSqlLinkedServiceName')]",
+          "dependsOn": [
+            "[variables('dataFactoryName')]"
+          ],
+          "apiVersion": "2017-09-01-preview",
+          "properties": {
+            "type": "AzureSqlDatabase",
+            "description": "Azure SQL linked service",
+            "typeProperties": {
+              "connectionString": "[concat('Server=tcp:',parameters('sqlServerName'),'.database.windows.net,1433;Database=', parameters('databaseName'), ';User ID=',parameters('sqlServerUserName'),';Password=',parameters('sqlServerPassword'),';Trusted_Connection=False;Encrypt=True;Connection Timeout=30')]"
+            }
+          }
+        },
+        {
+          "type": "datasets",
+          "name": "[variables('dataLakeInputDatasetName')]",
+          "dependsOn": [
+            "[variables('dataFactoryName')]",
+            "[variables('azureDataLakeLinkedServiceName')]"
+          ],
+          "apiVersion": "2017-09-01-preview",
+          "properties": {
+            "type": "AzureDataLakeStoreFile",
+            "linkedServiceName": {
+              "referenceName": "[variables('azureDataLakeLinkedServiceName')]",
+              "type": "LinkedServiceReference"
+            },
+            "structure": "[parameters('targetSQLTableColumns')]",
+            "typeProperties": {
+              "folderPath": "[parameters('sourceDataLakeContainer')]",
+              "fileName": "[parameters('sourceDataLakeFileName')]",
+              "format": {
+                "type": "TextFormat",
+                "columnDelimiter": ",",
+                "firstRowAsHeader": false,
+                "quoteChar": "\"",
+                "encodingName": "UTF-8"
+              }
+            },
+            "availability": {
+              "frequency": "Day",
+              "interval": 1
+            },
+            "external": true
+          }
+        },
+        {
+          "type": "datasets",
+          "name": "[variables('sqlOutputDatasetName')]",
+          "dependsOn": [
+            "[variables('dataFactoryName')]",
+            "[variables('azureSqlLinkedServiceName')]"
+          ],
+          "apiVersion": "2017-09-01-preview",
+          "properties": {
+            "type": "AzureSqlTable",
+            "linkedServiceName": {
+              "referenceName": "[variables('azureSqlLinkedServiceName')]",
+              "type": "LinkedServiceReference"
+            },
+            "structure": "[parameters('targetSQLTableColumns')]",
+            "typeProperties": {
+              "tableName": "[parameters('targetSQLTable')]"
+            },
+            "availability": {
+              "frequency": "Day",
+              "interval": 1
+            }
+          }
+        },
+        {
+          "type": "pipelines",
+          "name": "[variables('pipelineName')]",
+          "dependsOn": [
+            "[variables('dataFactoryName')]",
+            "[variables('azureDataLakeLinkedServiceName')]",
+            "[variables('azureSqlLinkedServiceName')]",
+            "[variables('dataLakeInputDatasetName')]",
+            "[variables('sqlOutputDatasetName')]"
+          ],
+          "apiVersion": "2017-09-01-preview",
+          "properties": {
+            "activities": [
+              {
+                "name": "CopyFromAzureDataLakeToAzureSQL",
+                "description": "Copy data from Azure Data Lake to Azure SQL",
+                "type": "Copy",
+                "typeProperties": {
+                  "source": {
+                    "type": "AzureDataLakeStoreSource"
+                  },
+                  "sink": {
+                    "type": "SqlSink",
+                    "sqlWriterStoredProcedureName": "[parameters('sqlServerStoredProcedure')]",
+                    "sqlWriterTableType": "[parameters('sqlServerStoredProcedureType')]"
+                  }
+                },
+                "inputs": [
+                  {
+                    "referenceName": "[variables('dataLakeInputDatasetName')]",
+                    "type": "DatasetReference"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "referenceName": "[variables('sqlOutputDatasetName')]",
+                    "type": "DatasetReference"
+                  }
+                ],
+                "policy": {
+                  "concurrency": 1,
+                  "executionPriorityOrder": "NewestFirst",
+                  "retry": 3,
+                  "timeout": "1.00:00:00"
+                }
+              }
+            ],
+            "start": "2016-10-03T00:00:00Z",
+            "end": "2099-08-16T00:00:00Z"
+          }
+        }
+      ]
+    }
+  ]
+}

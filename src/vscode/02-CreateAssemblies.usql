@@ -1,0 +1,6 @@
+USE Meetup;
+// Before submitting this job you need to create the folder "lib" in Data Lake Store and update the files in the lib folder
+CREATE ASSEMBLY [Avro] FROM @"adl://<data lake store>.azuredatalakestore.net/meetup/lib/Avro.dll";
+CREATE ASSEMBLY [log4net] FROM @"adl://<data lake store>.azuredatalakestore.net/meetup/lib/log4net.dll";
+CREATE ASSEMBLY [Newtonsoft.Json] FROM @"adl://<data lake store>.azuredatalakestore.net/meetup/lib/Newtonsoft.Json.dll";
+CREATE ASSEMBLY [Microsoft.Analytics.Samples.Formats] FROM @"adl://<data lake store>.azuredatalakestore.net/meetup/lib/Microsoft.Analytics.Samples.Formats.dll";

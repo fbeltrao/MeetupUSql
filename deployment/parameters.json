@@ -1,0 +1,57 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "servicePrincipalId": {
+            "value":""
+        },
+        "servicePrincipalKey": {
+            "value": ""
+        },
+        "sourceDataLakeName": {
+            "value": ""
+        },
+        "sourceDataLakeContainer": {
+            "value": "meetup"
+        },
+        "sourceDataLakeFileName": {
+            "value": "all-valid-meetups.csv"
+        },
+        "sqlServerName": {
+            "value": ""
+        },
+        "databaseName": {
+            "value": ""
+        },
+        "sqlServerUserName": {
+            "value": ""
+        },
+        "sqlServerPassword": {
+            "value": ""
+        },
+        "sqlServerStoredProcedure": {
+            "value": "spOverwriteMeetups"
+        },
+        "sqlServerStoredProcedureType": {
+            "value": "MeetupType"
+        },
+        "targetSQLTable": {
+            "value": "Meetup"
+        },
+        "targetSQLTableColumns": {
+            "value": [
+                { "name": "ID", "type": "String" },
+                { "name": "Visibility", "type": "String" },
+                { "name": "Date", "type": "Datetime" },
+                { "name": "Name", "type": "String" },
+                { "name": "Longitude", "type": "Double" },
+                { "name": "Latitude", "type": "Double" },
+                { "name": "Country", "type": "String" },
+                { "name": "City", "type": "String" },
+                { "name": "Group", "type": "String" },
+                { "name": "GroupCategory", "type": "String" },
+                { "name": "Status", "type": "String" }
+            ]
+        }
+    }
+}
